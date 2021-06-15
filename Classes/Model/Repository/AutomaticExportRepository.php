@@ -49,7 +49,7 @@ class AutomaticExportRepository extends AbstractRepository
     }
 
     /**
-     * Loads pages that are configured to be exported autimatically based on a given age
+     * Loads pages that are configured to be exported automatically based on a given age
      *
      * @param int $age
      * @param array $excludedPages
@@ -58,25 +58,11 @@ class AutomaticExportRepository extends AbstractRepository
     public function loadPagesConfiguredForAutomaticExport(int $age, array $excludedPages): array
     {
         $queryBuilder = self::getConnectionPool()->getQueryBuilderForTable('pages');
-
         $queryBuilder
             ->select('*')
             ->from('pages')
             ->where(
-                $queryBuilder->expr()->andX(
-                    $queryBuilder->expr()->gt(
-                        'localizer_include_with_automatic_export',
-                        0
-                    ),
-                    $queryBuilder->expr()->gte(
-                        'status',
-                        Constants::STATUS_CART_FINALIZED
-                    ),
-                    $queryBuilder->expr()->lt(
-                        'status',
-                        Constants::STATUS_CART_FILE_IMPORTED
-                    )
-                )
+                $queryBuilder->expr()->gt('localizer_include_with_automatic_export', 0),
             );
         if (!empty($excludedPages)) {
             $queryBuilder->andWhere(
@@ -88,11 +74,11 @@ class AutomaticExportRepository extends AbstractRepository
         }
         $pages = $queryBuilder->execute()->fetchAllAssociative();
         $pagesConfiguredForAutomaticExport = [];
-        if (!empty($pages)) {
-            foreach ($pages as $page) {
-                $pagesConfiguredForAutomaticExport[$page['uid']] = $page;
-            }
+
+        foreach ($pages as $page) {
+            $pagesConfiguredForAutomaticExport[$page['uid']] = $page;
         }
+
         return $pagesConfiguredForAutomaticExport;
     }
 
@@ -126,21 +112,22 @@ class AutomaticExportRepository extends AbstractRepository
                 )
             )
             ->where(
-                $queryBuilder->expr()->andX(
-                    $queryBuilder->expr()->notIn(
-                        'pages.uid',
-                        $excludedPages
-                    ),
-                    $queryBuilder->expr()->isNotNull('mm.uid')
+                $queryBuilder->expr()->isNotNull('mm.uid')
+            );
+
+        if (!empty($excludedPages)) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->notIn(
+                    'uid',
+                    $excludedPages
                 )
-            )
-            ->execute()
-            ->fetchAllAssociative();
+            );
+        }
+
+        $queryBuilder->execute()->fetchAllAssociative();
         $pagesAddedToSpecificAutomaticExport = [];
-        if (!empty($pages)) {
-            foreach ($pages as $page) {
-                $pagesAddedToSpecificAutomaticExport[$page['uid']] = $page;
-            }
+        foreach ($pages as $page) {
+            $pagesAddedToSpecificAutomaticExport[$page['uid']] = $page;
         }
         return $pagesAddedToSpecificAutomaticExport;
     }

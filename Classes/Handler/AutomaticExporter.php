@@ -124,6 +124,23 @@ class AutomaticExporter extends AbstractCartHandler
             $pagesAddedToThisAutomaticExport
         );
         if (!empty($pagesForAutomaticExport)) {
+            $translationConfigurationProvider = GeneralUtility::makeInstance(
+                TranslationConfigurationProvider::class
+            );
+            $systemLanguages = $translationConfigurationProvider->getSystemLanguages();
+            $staticLanguages = $this->selectorRepository->getStaticLanguages($systemLanguages);
+            $localizerLanguages = $this->selectorRepository->getLocalizerLanguages((int)$localizer['uid']);
+
+            if (!empty($localizerLanguages['target'])) {
+                $targetLanguages = array_flip(
+                    GeneralUtility::intExplode(
+                        ',',
+                        $localizerLanguages['target'],
+                        true
+                    )
+                );
+            }
+
             foreach ($pagesForAutomaticExport as $page) {
                 $translatableTables = $this->findTranslatableTables((int)$page['uid']);
                 $configuration = [
@@ -136,83 +153,69 @@ class AutomaticExporter extends AbstractCartHandler
                     $translatableTables,
                     $configuration
                 );
-                if (!empty($recordsToBeExported) && !empty($recordsToBeExported['records'])) {
-                    $translationConfigurationProvider = GeneralUtility::makeInstance(
-                        TranslationConfigurationProvider::class
-                    );
-                    $systemLanguages = $translationConfigurationProvider->getSystemLanguages();
-                    $localizerLanguages = $this->selectorRepository->getLocalizerLanguages((int)$localizer['uid']);
-                    if (!empty($localizerLanguages['source']) && !empty($localizerLanguages['target'])) {
-                        $automaticTriples = [];
-                        $languageArray = array_flip(
-                            GeneralUtility::intExplode(
-                                ',',
-                                $localizerLanguages['target'],
-                                true
-                            )
-                        );
-                        $configuration['languages'] = [];
-                        foreach ($systemLanguages as $language) {
-                            if (isset($languageArray[(int)$language['static_lang_isocode']])) {
-                                $configuration['languages'][(int)$language['uid']] = 1;
-                            }
+                if (!empty($recordsToBeExported) && !empty($recordsToBeExported['records']) && !empty($targetLanguages)) {
+                    $automaticTriples = [];
+                    $configuration['languages'] = [];
+                    foreach ($staticLanguages as $language) {
+                        if (isset($targetLanguages[(int)$language['static_lang_isocode']])) {
+                            $configuration['languages'][(int)$language['uid']] = 1;
                         }
-                        foreach ($recordsToBeExported['records'] as $table => $records) {
-                            if (!empty($records)) {
-                                if (!array_key_exists($table, $automaticTriples)) {
-                                    $automaticTriples[$table] = [];
-                                }
-                                foreach ($records as $uid => $record) {
-                                    foreach ($configuration['languages'] as $language => $value) {
-                                        $automaticTriples[$table][$uid][$language] = 1;
-                                    }
+                    }
+                    foreach ($recordsToBeExported['records'] as $table => $records) {
+                        if (!empty($records)) {
+                            if (!array_key_exists($table, $automaticTriples)) {
+                                $automaticTriples[$table] = [];
+                            }
+                            foreach ($records as $uid => $record) {
+                                foreach ($configuration['languages'] as $language => $value) {
+                                    $automaticTriples[$table][$uid][$language] = 1;
                                 }
                             }
                         }
-                        if (!empty($recordsToBeExported['referencedRecords'])) {
-                            foreach ($recordsToBeExported['referencedRecords'] as $referencedTables => $referencedRecords) {
-                                if (!empty($referencedRecords)) {
-                                    foreach ($referencedRecords as $parentId => $childTable) {
-                                        if (!empty($childTable)) {
-                                            $childTableName = key($childTable);
-                                            if (!array_key_exists($childTableName, $automaticTriples)) {
-                                                $automaticTriples[$childTableName] = [];
-                                            }
-                                            foreach ($childTable as $childArray) {
-                                                $child = $childArray[key($childArray)];
-                                                foreach ($configuration['languages'] as $language => $value) {
-                                                    $automaticTriples[$childTableName][(int)$child['uid']][$language] = 1;
-                                                }
+                    }
+                    if (!empty($recordsToBeExported['referencedRecords'])) {
+                        foreach ($recordsToBeExported['referencedRecords'] as $referencedTables => $referencedRecords) {
+                            if (!empty($referencedRecords)) {
+                                foreach ($referencedRecords as $parentId => $childTable) {
+                                    if (!empty($childTable)) {
+                                        $childTableName = key($childTable);
+                                        if (!array_key_exists($childTableName, $automaticTriples)) {
+                                            $automaticTriples[$childTableName] = [];
+                                        }
+                                        foreach ($childTable as $childArray) {
+                                            $child = $childArray[key($childArray)];
+                                            foreach ($configuration['languages'] as $language => $value) {
+                                                $automaticTriples[$childTableName][(int)$child['uid']][$language] = 1;
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                        $cartId = (int)$this->selectorRepository->createNewCart(
-                            (int)$localizer['pid'],
-                            (int)$localizer['uid']
-                        );
-                        $this->selectorRepository->storeConfiguration((int)$localizer['pid'], $cartId, $configuration);
-                        $pageIds = [(int)$page['uid'] => (int)$page['uid']];
-                        $this->automaticExportRepository->storeCart(
-                            $pageIds,
-                            $cartId,
-                            $configuration,
-                            $automaticTriples
-                        );
-                        $configurationId = $this->selectorRepository->storeL10nmgrConfiguration(
-                            (int)$localizer['pid'],
-                            (int)$localizer['uid'],
-                            $cartId,
-                            $configuration
-                        );
-                        $this->selectorRepository->finalizeCart((int)$localizer['uid'], $cartId, $configurationId);
-                        /** @var FileExporter $fileExporter */
-                        $fileExporter = GeneralUtility::makeInstance(FileExporter::class);
-                        $fileExporter->init($cartId);
-                        $fileExporter->run();
                     }
+                    $cartId = (int)$this->selectorRepository->createNewCart(
+                        (int)$localizer['pid'],
+                        (int)$localizer['uid']
+                    );
+                    $this->selectorRepository->storeConfiguration((int)$localizer['pid'], $cartId, $configuration);
+                    $pageIds = [(int)$page['uid'] => (int)$page['uid']];
+                    $this->automaticExportRepository->storeCart(
+                        $pageIds,
+                        $cartId,
+                        $configuration,
+                        $automaticTriples
+                    );
+                    $configurationId = $this->selectorRepository->storeL10nmgrConfiguration(
+                        (int)$localizer['pid'],
+                        (int)$localizer['uid'],
+                        $cartId,
+                        $configuration
+                    );
+                    $this->selectorRepository->finalizeCart((int)$localizer['uid'], $cartId, $configurationId);
+                    /** @var FileExporter $fileExporter */
+                    $fileExporter = GeneralUtility::makeInstance(FileExporter::class);
+                    $fileExporter->init($cartId);
+                    $fileExporter->run();
                 }
             }
         }
