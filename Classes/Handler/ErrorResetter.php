@@ -59,30 +59,32 @@ class ErrorResetter extends AbstractHandler
 
     public function run()
     {
-        if ($this->canRun() === true) {
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable(
-                Constants::TABLE_EXPORTDATA_MM
-            );
-            $queryBuilder
-                ->update(Constants::TABLE_EXPORTDATA_MM)
-                ->where(
-                    $queryBuilder->expr()->isNull(
-                        'last_error'
-                    ),
-                    $queryBuilder->expr()->gt(
-                        'previous_status',
-                        0
-                    ),
-                    $queryBuilder->expr()->eq(
-                        'processid',
-                        $queryBuilder->createNamedParameter($this->getProcessId(), PDO::PARAM_STR)
-                    )
-                )
-                ->set('status', $queryBuilder->quoteIdentifier('previous_status'))
-                ->set('previous_status', 0)
-                ->set('last_error', null)
-                ->execute();
+        if ($this->canRun() === false) {
+            return;
         }
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable(
+            Constants::TABLE_EXPORTDATA_MM
+        );
+        $queryBuilder
+            ->update(Constants::TABLE_EXPORTDATA_MM)
+            ->where(
+                $queryBuilder->expr()->isNull(
+                    'last_error'
+                ),
+                $queryBuilder->expr()->gt(
+                    'previous_status',
+                    0
+                ),
+                $queryBuilder->expr()->eq(
+                    'processid',
+                    $queryBuilder->createNamedParameter($this->getProcessId(), PDO::PARAM_STR)
+                )
+            )
+            ->set('status', $queryBuilder->quoteIdentifier('previous_status'))
+            ->set('previous_status', 0)
+            ->set('last_error', null)
+            ->execute();
     }
 
     /**

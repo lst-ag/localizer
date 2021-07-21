@@ -81,41 +81,42 @@ class StatusRequester extends AbstractHandler
      */
     public function run()
     {
-        if ($this->canRun() === true) {
-            foreach ($this->data as $row) {
-                $localizerSettings = $this->getLocalizerSettings($row['uid_local']);
-                if ($localizerSettings === false) {
-                    $this->addErrorResult(
-                        $row['uid'],
-                        Constants::STATUS_CART_ERROR,
-                        $row['status'],
-                        'LOCALIZER settings (' . $row['uid_local'] . ') not found'
-                    );
+        if ($this->canRun() === false) {
+            return;
+        }
+        foreach ($this->data as $row) {
+            $localizerSettings = $this->getLocalizerSettings($row['uid_local']);
+            if ($localizerSettings === false) {
+                $this->addErrorResult(
+                    $row['uid'],
+                    Constants::STATUS_CART_ERROR,
+                    $row['status'],
+                    'LOCALIZER settings (' . $row['uid_local'] . ') not found'
+                );
+                continue;
+            }
+            $configuration = array_merge(
+                (array)$localizerSettings,
+                [
+                    'uid' => $row['uid'],
+                    'file' => $row['filename'],
+                    'target' => $this->getIso2ForLocale($row),
+                ]
+            );
+            /** @var RequestStatus $runner */
+            $runner = GeneralUtility::makeInstance(RequestStatus::class);
+            $runner->init($configuration);
+            $runner->run($configuration);
+            $response = $runner->getResponse();
+            if (isset($response['http_status_code'])) {
+                if ($response['http_status_code'] == 200) {
+                    $this->processResponse($row['uid'], $response);
                 } else {
-                    $configuration = array_merge(
-                        (array)$localizerSettings,
-                        [
-                            'uid' => $row['uid'],
-                            'file' => $row['filename'],
-                            'target' => $this->getIso2ForLocale($row),
-                        ]
-                    );
-                    /** @var RequestStatus $runner */
-                    $runner = GeneralUtility::makeInstance(RequestStatus::class);
-                    $runner->init($configuration);
-                    $runner->run($configuration);
-                    $response = $runner->getResponse();
-                    if (isset($response['http_status_code'])) {
-                        if ($response['http_status_code'] == 200) {
-                            $this->processResponse($row['uid'], $response);
-                        } else {
-                            DebugUtility::debug($response, 'ERROR');
-                        }
-                    } else {
-                        DebugUtility::debug($response, __LINE__);
-                        //todo: more error handling
-                    }
+                    DebugUtility::debug($response, 'ERROR');
                 }
+            } else {
+                DebugUtility::debug($response, __LINE__);
+                //todo: more error handling
             }
         }
     }

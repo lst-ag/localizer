@@ -83,70 +83,71 @@ class FileSender extends AbstractHandler
      */
     public function run()
     {
-        if ($this->canRun() === true) {
-            foreach ($this->data as $row) {
-                $file = $this->getFileAndPath($row['filename']);
-                if ($file === false) {
-                    $this->addErrorResult(
+        if ($this->canRun() === false) {
+            return;
+        }
+        foreach ($this->data as $row) {
+            $file = $this->getFileAndPath($row['filename']);
+            if ($file === false) {
+                $this->addErrorResult(
+                    $row['uid'],
+                    Constants::STATUS_CART_ERROR,
+                    $row['status'],
+                    'File ' . $row['filename'] . ' not found'
+                );
+                continue;
+            }
+            $localizerSettings = $this->getLocalizerSettings($row['uid_local']);
+            if ($localizerSettings === false) {
+                $this->addErrorResult(
+                    $row['uid'],
+                    Constants::STATUS_CART_ERROR,
+                    $row['status'],
+                    'LOCALIZER settings (' . $row['uid_local'] . ') not found'
+                );
+                continue;
+            }
+            $additionalConfiguration = [
+                'uid' => $row['uid'],
+                'localFile' => $file,
+                'file' => $row['filename'],
+            ];
+            $deadline = $this->addDeadline($row);
+            if (!empty($deadline)) {
+                $additionalConfiguration['deadline'] = $deadline;
+            }
+            $metadata = $this->addMetaData($row);
+            if (!empty($metadata)) {
+                $additionalConfiguration['metadata'] = $metadata;
+            }
+            $translateAll = $this->translateAll($row);
+            if ($translateAll === false) {
+                /** @var LanguageRepository $languageRepository */
+                $languageRepository = GeneralUtility::makeInstance(LanguageRepository::class);
+                $targetLocalesUids = $languageRepository->getAllTargetLanguageUids(
+                    $row['uid'],
+                    Constants::TABLE_EXPORTDATA_MM
+                );
+                $additionalConfiguration['targetLocales'] =
+                    $languageRepository->getStaticLanguagesCollateLocale($targetLocalesUids, true);
+            }
+            $configuration = array_merge(
+                (array)$localizerSettings,
+                $additionalConfiguration
+            );
+            if ((int)$row['action'] === Constants::ACTION_SEND_FILE) {
+                /** @var SendFile $runner */
+                $runner = GeneralUtility::makeInstance(SendFile::class);
+                $runner->init($configuration);
+                $runner->run();
+                $response = $runner->getResponse();
+                //fixme:: improve error handling
+                if ($response === '') {
+                    $this->addSuccessResult(
                         $row['uid'],
-                        Constants::STATUS_CART_ERROR,
-                        $row['status'],
-                        'File ' . $row['filename'] . ' not found'
+                        Constants::STATUS_CART_FILE_SENT,
+                        Constants::ACTION_REQUEST_STATUS
                     );
-                } else {
-                    $localizerSettings = $this->getLocalizerSettings($row['uid_local']);
-                    if ($localizerSettings === false) {
-                        $this->addErrorResult(
-                            $row['uid'],
-                            Constants::STATUS_CART_ERROR,
-                            $row['status'],
-                            'LOCALIZER settings (' . $row['uid_local'] . ') not found'
-                        );
-                    } else {
-                        $additionalConfiguration = [
-                            'uid' => $row['uid'],
-                            'localFile' => $file,
-                            'file' => $row['filename'],
-                        ];
-                        $deadline = $this->addDeadline($row);
-                        if (!empty($deadline)) {
-                            $additionalConfiguration['deadline'] = $deadline;
-                        }
-                        $metadata = $this->addMetaData($row);
-                        if (!empty($metadata)) {
-                            $additionalConfiguration['metadata'] = $metadata;
-                        }
-                        $translateAll = $this->translateAll($row);
-                        if ($translateAll === false) {
-                            /** @var LanguageRepository $languageRepository */
-                            $languageRepository = GeneralUtility::makeInstance(LanguageRepository::class);
-                            $targetLocalesUids = $languageRepository->getAllTargetLanguageUids(
-                                $row['uid'],
-                                Constants::TABLE_EXPORTDATA_MM
-                            );
-                            $additionalConfiguration['targetLocales'] =
-                                $languageRepository->getStaticLanguagesCollateLocale($targetLocalesUids, true);
-                        }
-                        $configuration = array_merge(
-                            (array)$localizerSettings,
-                            $additionalConfiguration
-                        );
-                        if ((int)$row['action'] === Constants::ACTION_SEND_FILE) {
-                            /** @var SendFile $runner */
-                            $runner = GeneralUtility::makeInstance(SendFile::class);
-                            $runner->init($configuration);
-                            $runner->run();
-                            $response = $runner->getResponse();
-                            //fixme:: improve error handling
-                            if ($response === '') {
-                                $this->addSuccessResult(
-                                    $row['uid'],
-                                    Constants::STATUS_CART_FILE_SENT,
-                                    Constants::ACTION_REQUEST_STATUS
-                                );
-                            }
-                        }
-                    }
                 }
             }
         }
