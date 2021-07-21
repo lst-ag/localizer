@@ -6,6 +6,7 @@ use Exception;
 use Localizationteam\Localizer\Constants;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\EventDispatcher\EventDispatcher;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -15,6 +16,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 abstract class AbstractHandler
 {
+    /**
+     * @var EventDispatcher
+     */
+    protected $eventDispatcher;
     /**
      * @var string
      */
@@ -27,6 +32,11 @@ abstract class AbstractHandler
      * @var int
      */
     private $limit = 0;
+
+    public function injectEventDispatcher(EventDispatcher $eventDispatcher)
+    {
+        $this->eventDispatcher = $eventDispatcher;
+    }
 
     /**
      * @param int $id

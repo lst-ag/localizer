@@ -116,6 +116,10 @@ class FileImporter extends AbstractHandler
             $response = $this->processImport($row, $originalResponse['files']);
             $this->processResponse($row['uid'], $response);
         }
+
+        $event = new HandlerRunHasFinished($this, $this->result);
+        $this->eventDispatcher->dispatch($event);
+        $this->result = $event->getResult();
     }
 
     /**

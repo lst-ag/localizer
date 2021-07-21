@@ -6,3 +6,9 @@ services:
 
   Localizationteam\Localizer\:
     resource: '../Classes/*'
+
+  Localizationteam\Localizer\Handler\FileDownloader:
+    public: true
+
+  Localizationteam\Localizer\Handler\FileImporter:
+    public: true
