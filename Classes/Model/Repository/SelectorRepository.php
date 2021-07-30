@@ -336,13 +336,15 @@ class SelectorRepository extends AbstractRepository
      * @param int $cartId
      * @param array $pageIds
      * @param string $excludeItems
+     * @param string $includeItems
      */
     public function updateL10nmgrConfiguration(
         int $uid,
         int $localizerId,
         int $cartId,
         array $pageIds,
-        string $excludeItems
+        string $excludeItems,
+        string $includeItems = ''
     ) {
         if ($localizerId > 0 && $cartId > 0) {
             $pageIds = implode(',', GeneralUtility::intExplode(',', implode(',', array_keys($pageIds))));
@@ -353,6 +355,7 @@ class SelectorRepository extends AbstractRepository
                     [
                         'tstamp' => time(),
                         'exclude' => $excludeItems,
+                        'include' => $includeItems,
                         'pages' => $pageIds,
                     ],
                     [
@@ -360,6 +363,7 @@ class SelectorRepository extends AbstractRepository
                     ],
                     [
                         PDO::PARAM_INT,
+                        PDO::PARAM_STR,
                         PDO::PARAM_STR,
                         PDO::PARAM_STR,
                     ]

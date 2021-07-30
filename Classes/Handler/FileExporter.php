@@ -57,6 +57,11 @@ class FileExporter extends AbstractCartHandler
     protected $exportTree = [];
 
     /**
+     * @var bool
+     */
+    protected $useIncludeList = true;
+
+    /**
      * @param int $id
      * @throws Exception
      */
@@ -120,9 +125,11 @@ class FileExporter extends AbstractCartHandler
                 if (!empty($cartConfiguration['languages']) && !empty($cartConfiguration['tables'])) {
                     $tables = $cartConfiguration['tables'];
                     $pageIds = $this->selectorRepository->loadAvailablePages($pid, $cart);
-                    $this->content = $this->selectorRepository->getRecordsOnPages($pid, $pageIds, $tables);
+                    if (!$this->useIncludeList) {
+                        $this->content = $this->selectorRepository->getRecordsOnPages($pid, $pageIds, $tables);
+                    }
                     $this->triples = $this->selectorRepository->loadStoredTriples($pageIds, $cart);
-                    if (!empty($this->content) && !empty($this->triples)) {
+                    if (($this->useIncludeList || !empty($this->content)) && !empty($this->triples)) {
                         foreach (array_keys($cartConfiguration['languages']) as $language) {
                             $configuredLanguageExport = $this->configureRecordsForLanguage(
                                 $localizer,
@@ -172,6 +179,46 @@ class FileExporter extends AbstractCartHandler
      */
     protected function configureRecordsForLanguage(int $localizer, int $cart, int $configurationId, int $language): bool
     {
+        if ($this->useIncludeList) {
+            $includeItems = $this->configureIncludeListForLanguage($language);
+            if (count($includeItems) === 0) {
+                return false;
+            }
+            $excludeItems = [];
+        } else {
+            $excludeItems = $this->configureExcludeListForLanguage($language);
+            if (count($excludeItems) === 0) {
+                return false;
+            }
+            $includeItems = [];
+        }
+
+        $pageIds = $this->selectorRepository->loadAvailablePages(0, $cart);
+        $this->selectorRepository->updateL10nmgrConfiguration(
+            $configurationId,
+            $localizer,
+            $cart,
+            $pageIds,
+            implode(',', $excludeItems),
+            implode(',', $includeItems)
+        );
+        return true;
+    }
+
+    protected function configureIncludeListForLanguage(int $language): array
+    {
+        $includeItems = [];
+        foreach ($this->triples as $triple) {
+            if ($triple['languageId'] !== $language) {
+                continue;
+            }
+            $includeItems[] = $triple['tablename'] . ':' . $triple['recordId'];
+        }
+        return $includeItems;
+    }
+
+    protected function configureExcludeListForLanguage(int $language): array
+    {
         $this->exportTree = [];
         if (!empty($this->content['records'])) {
             foreach ($this->content['records'] as $table => $records) {
@@ -188,19 +235,7 @@ class FileExporter extends AbstractCartHandler
                 }
             }
         }
-        if (!empty($this->triples)) {
-            $excludeItems = implode(',', $this->exportTree);
-            $pageIds = $this->selectorRepository->loadAvailablePages(0, $cart);
-            $this->selectorRepository->updateL10nmgrConfiguration(
-                $configurationId,
-                $localizer,
-                $cart,
-                $pageIds,
-                $excludeItems
-            );
-            return true;
-        }
-        return false;
+        return $this->exportTree;
     }
 
     /**
