@@ -262,14 +262,6 @@ return [
                 'size' => '48',
             ],
         ],
-        'all_locale' => [
-            'exclude' => 1,
-            'label' => $l10n . 'tx_localizer_settings_l10n_exportdata_mm.all_locale',
-            'config' => [
-                'type' => 'check',
-                'default' => '0',
-            ],
-        ],
         'source_locale' => [
             'exclude' => 1,
             'label' => $l10n . 'tx_localizer_settings_l10n_exportdata_mm.source_locale',
@@ -315,6 +307,6 @@ return [
 
     ],
     'types' => [
-        '0' => ['showitem' => 'hidden,uid_local,uid_export,uid_foreign,description,localizer_path,deadline,action,all_locale,source_locale,target_locale,configuration,status,last_error'],
+        '0' => ['showitem' => 'hidden,uid_local,uid_export,uid_foreign,description,localizer_path,deadline,action,source_locale,target_locale,configuration,status,last_error'],
     ],
 ];

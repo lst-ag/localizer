@@ -120,17 +120,16 @@ class FileSender extends AbstractHandler
             if (!empty($metadata)) {
                 $additionalConfiguration['metadata'] = $metadata;
             }
-            $translateAll = $this->translateAll($row);
-            if ($translateAll === false) {
-                /** @var LanguageRepository $languageRepository */
-                $languageRepository = GeneralUtility::makeInstance(LanguageRepository::class);
-                $targetLocalesUids = $languageRepository->getAllTargetLanguageUids(
-                    $row['uid'],
-                    Constants::TABLE_EXPORTDATA_MM
-                );
-                $additionalConfiguration['targetLocales'] =
-                    $languageRepository->getStaticLanguagesCollateLocale($targetLocalesUids, true);
-            }
+
+            /** @var LanguageRepository $languageRepository */
+            $languageRepository = GeneralUtility::makeInstance(LanguageRepository::class);
+            $targetLocalesUids = $languageRepository->getAllTargetLanguageUids(
+                $row['uid'],
+                Constants::TABLE_EXPORTDATA_MM
+            );
+            $additionalConfiguration['targetLocales'] =
+                $languageRepository->getStaticLanguagesCollateLocale($targetLocalesUids, true);
+
             $configuration = array_merge(
                 (array)$localizerSettings,
                 $additionalConfiguration

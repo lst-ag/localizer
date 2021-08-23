@@ -40,17 +40,4 @@ trait Language
 
         return $iso2;
     }
-
-    /**
-     * @param array $row
-     * @return bool
-     */
-    protected function translateAll(array $row): bool
-    {
-        $translateAll = false;
-        if (isset($row['all_locale'])) {
-            $translateAll = (bool)$row['all_locale'];
-        }
-        return $translateAll;
-    }
 }

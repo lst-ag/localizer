@@ -70,7 +70,6 @@ class SelectorRepository extends AbstractRepository
                 'pid' => (int)$pageId,
                 'uid_local' => (int)$localizerId,
                 'source_locale' => 1,
-                'all_locale' => 1,
                 'crdate' => time(),
                 'cruser_id' => (int)$this->getBackendUser()->user['uid'],
                 'status' => Constants::STATUS_CART_ADDED,

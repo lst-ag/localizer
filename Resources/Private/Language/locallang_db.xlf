@@ -102,9 +102,6 @@
             <trans-unit id="tx_localizer_settings_l10n_exportdata_mm.deadline">
                 <source>Deadline</source>
             </trans-unit>
-            <trans-unit id="tx_localizer_settings_l10n_exportdata_mm.all_locale">
-                <source>All languages</source>
-            </trans-unit>
             <trans-unit id="tx_localizer_settings_l10n_exportdata_mm.source_locale">
                 <source>Source Language</source>
             </trans-unit>

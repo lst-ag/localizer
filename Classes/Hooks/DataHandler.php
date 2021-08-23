@@ -9,7 +9,6 @@ use Localizationteam\Localizer\Constants;
 use Localizationteam\Localizer\Language;
 use Localizationteam\Localizer\Model\Repository\LanguageRepository;
 use PDO;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -93,49 +92,6 @@ class DataHandler
     {
         return
             isset($_REQUEST['doSave']) && $_REQUEST['doSave'];
-    }
-
-    /**
-     * @param array $incomingFieldArray
-     * @param string $table
-     * @param mixed $id
-     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $tceMain
-     */
-    public function processDatamap_preProcessFieldArray(
-        array &$incomingFieldArray,
-        string $table,
-        $id,
-        \TYPO3\CMS\Core\DataHandling\DataHandler &$tceMain
-    ) {
-        if ($table === Constants::TABLE_EXPORTDATA_MM) {
-            // if all languages are selected we skip other languages
-            $targetLanguagesUidList = $this->getAllTargetUids($id);
-            $targetLanguages = ',' . $incomingFieldArray['target_locale'] . ',';
-            $allLocale = 0;
-            if (strpos($targetLanguages, ',0,') !== false) {
-                $incomingFieldArray['target_locale'] = implode(',', $targetLanguagesUidList);
-                $tceMain->datamap[$table][$id]['target_locale'] = $incomingFieldArray['target_locale'];
-                $allLocale = 1;
-            }
-            if (isset($incomingFieldArray['all_locale']) && (bool)$incomingFieldArray['all_locale'] === true) {
-                $incomingFieldArray['target_locale'] = implode(',', $targetLanguagesUidList);
-                $tceMain->datamap[$table][$id]['target_locale'] = $incomingFieldArray['target_locale'];
-                $allLocale = 1;
-            }
-            $incomingFieldArray['all_locale'] = $allLocale;
-            $tceMain->datamap[$table]['id']['all_locale'] = $allLocale;
-        }
-    }
-
-    /**
-     * @param int $settingsId
-     * @return array
-     */
-    protected function getAllTargetUids(int $settingsId): array
-    {
-        $originalValues = BackendUtility::getRecord(Constants::TABLE_EXPORTDATA_MM, $settingsId);
-        $languageRepository = GeneralUtility::makeInstance(LanguageRepository::class);
-        return $languageRepository->getAllTargetLanguageUids($originalValues['uid_local'], Constants::TABLE_LOCALIZER_SETTINGS);
     }
 
     /**
