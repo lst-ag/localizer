@@ -142,7 +142,11 @@ class FileExporter extends AbstractCartHandler
 
                                 if ($output['http_status_code'] > 0) {
                                     throw new Exception(
-                                        'Failed export to file with: ' . $output['response']['command'] . '. Output was: ' . $output['response']['output'],
+                                        sprintf(
+                                            'Failed export to file with: %s. Output was: %s',
+                                            $output['response']['command'],
+                                            json_encode($output['response']['output']),
+                                        ),
                                         1625730835
                                     );
                                 }
