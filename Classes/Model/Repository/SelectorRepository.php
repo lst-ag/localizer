@@ -484,7 +484,7 @@ class SelectorRepository extends AbstractRepository
             $languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'];
             $transOrigPointerField = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'];
             $queryBuilder = self::getConnectionPool()->getQueryBuilderForTable($table);
-            $queryBuilder->getRestrictions()->removeAll();
+            $queryBuilder->getRestrictions()->removeAll()->add(new DeletedRestriction());
             $queryBuilder
                 ->selectLiteral(
                     $table . '.*,
