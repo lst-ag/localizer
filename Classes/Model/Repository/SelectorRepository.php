@@ -504,7 +504,7 @@ class SelectorRepository extends AbstractRepository
                     $queryBuilder->expr()->andX(
                         $queryBuilder->expr()->eq(
                             $table . '.uid',
-                            $queryBuilder->quoteIdentifier('translations.pid')
+                            $queryBuilder->quoteIdentifier('translations.l10n_parent')
                         ),
                         $queryBuilder->expr()->gt(
                             'translations.' . $languageField,
@@ -551,7 +551,7 @@ class SelectorRepository extends AbstractRepository
                     'outdated',
                     $queryBuilder->expr()->andX(
                         $queryBuilder->expr()->eq(
-                            'outdated.pid',
+                            'outdated.l10n_parent',
                             $queryBuilder->quoteIdentifier($table . '.uid')
                         ),
                         $queryBuilder->expr()->gt(
