@@ -13,10 +13,10 @@ class LocalizerSettingsRepository extends AbstractRepository
      * @param array $fields
      * @return array
      */
-    public function findByUid(int $uid, array $fields = ['*']): array
+    public function findByUid(int $uid, array $fields = ['*']): ?array
     {
         $connection = self::getConnectionForTable(Constants::TABLE_LOCALIZER_SETTINGS);
-        return $connection->select($fields, Constants::TABLE_LOCALIZER_SETTINGS, ['uid' => $uid])->fetchAssociative();
+        return $connection->select($fields, Constants::TABLE_LOCALIZER_SETTINGS, ['uid' => $uid])->fetchAssociative() ?: null;
     }
 
     public static function getConnectionForTable($table): Connection

@@ -155,6 +155,10 @@ trait Data
         ];
 
         $row = $localizerSettingsRepository->findByUid((int)$uid, $fields);
+        if (!is_array($row)) {
+            return [];
+        }
+
 
         if ($row['type'] === '0' || ExtensionManagementUtility::isLoaded($row['type'])) {
             if ($row['type'] === '0') {

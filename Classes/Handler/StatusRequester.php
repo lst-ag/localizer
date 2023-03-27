@@ -114,9 +114,6 @@ class StatusRequester extends AbstractHandler
                 } else {
                     DebugUtility::debug($response, 'ERROR');
                 }
-            } else {
-                DebugUtility::debug($response, __LINE__);
-                //todo: more error handling
             }
         }
     }

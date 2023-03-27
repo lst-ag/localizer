@@ -114,6 +114,10 @@ class RequestStatus
                 }
                 break;
             default:
+                if (!isset($this->api)) {
+                    return;
+                }
+
                 try {
                     $this->response = $this->api->getWorkProgress(
                         (array)$this->path,
